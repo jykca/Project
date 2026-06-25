@@ -77,17 +77,106 @@ void line(double xCordStart, double yCordStart, double xCordEnd, double yCordEnd
 
 
   for (int i=1; i<=intervals; i++){
-    move(xCordStart+changeX*i, yCordStart+changeY*i);
+
+    double newX = xCordStart+changeX*i;
+    double newY = yCordStart+changeY*i;
+
+
+    move(newX, newY);
 
     //BUG: if y goes from pos -> neg or neg -> pos, a bigger delay is needed, this is because the motor needs a time to completely turn around.
 
-    //if ()
+    double oldY = yCordStart+changeY*(i-1);
+    if ((oldY<=0 && newY>0) || (oldY>=0 && newY<0)){
+      delay(2000);
+    }
 
     delay(100);
   }
 
   // accounting for rounding errors.
   move(xCordEnd,yCordEnd);
+}
+
+void arc(double xStart, double yStart, double xMid, double yMid, double xEnd, double yEnd){
+
+  //arc check, checks if the triangle formed by these three points yields a very small area.
+
+  double triangleArea = 0.5 * ((xStart * (yMid - yEnd)) + (xMid * (yEnd - yStart)) + (xEnd * (yStart - yMid)));
+
+  if (abs(triangleArea) < 0.000001){
+    return; // points are bascially collinear
+  }
+
+  //finding centre point of arc. 
+  double centerX = ((xStart*xStart + yStart*yStart)*(yMid-yEnd) + (xMid*xMid + yMid*yMid)*(yEnd-yStart) + (xEnd*xEnd + yEnd*yEnd)*(yStart-yMid))/(triangleArea*2);
+
+  double centerY = ((xStart*xStart + yStart*yStart)*(xEnd-xMid) + (xMid*xMid + yMid*yMid)*(xStart-xEnd) + (xEnd*xEnd + yEnd*yEnd)*(xMid-xStart))/(triangleArea*2);
+
+  double radius =
+        sqrt(pow(xStart - centerX, 2) +
+             pow(yStart - centerY, 2));
+
+    // angles ONLY used to generate points (NOT for move)
+    double a1 = atan2(yStart - centerY, xStart - centerX);
+    double a2 = atan2(yMid   - centerY, xMid   - centerX);
+    double a3 = atan2(yEnd   - centerY, xEnd   - centerX);
+
+    // normalize to 0..2PI
+    auto norm = [](double a){
+        while (a < 0) a += 2*PI;
+        while (a >= 2*PI) a -= 2*PI;
+        return a;
+    };
+
+    a1 = norm(a1);
+    a2 = norm(a2);
+    a3 = norm(a3);
+
+    // decide direction through cross products. Basically checks whether the vector from start to middle is to the left or right of the vector from start to end.
+    double ax = xStart - centerX;
+    double ay = yStart - centerY;
+
+    double bx = xMid - centerX;
+    double by = yMid - centerY;
+
+    double cx = xEnd - centerX;
+    double cy = yEnd - centerY;
+
+    double cross =
+    (cx - ax)*(by - ay) - 
+    (bx - ax)*(cy - ay);
+
+    bool ccw = (cross < 0);
+
+    double total;
+
+    if (ccw){
+        total = a3 - a1;
+        if (total < 0) total += 2*PI;
+    } else {
+        total = a1 - a3;
+        if (total < 0) total += 2*PI;
+    }
+
+    int steps = 50;
+
+    for (int i = 0; i <= steps; i++){
+
+        double t = (double)i / steps;
+
+        double angle = ccw
+            ? a1 + total * t
+            : a1 - total * t;
+
+        double x = centerX + radius * cos(angle);
+        double y = centerY + radius * sin(angle);
+
+        move(x, y); 
+        delay(200);
+    }
+
+    move(xEnd, yEnd);
 }
 
 void setup() {
@@ -128,6 +217,9 @@ void loop() {
         line(5,-5,-5,-5,3);
         line(-5,-5,-5,5,3);
         line(-5,5,5,5,3);
+      }  else if ((input == 'k' || input == 'K')){
+        
+        arc(-5, 1, 0, 5, 5, 1);
       }
     } else {
       Serial.print("Out of bounds!");
