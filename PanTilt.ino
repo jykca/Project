@@ -194,10 +194,41 @@ void setup() {
 
 void loop() {
 
-
   if (Serial.available() > 0) {
-    char input = Serial.read();
+
+  //STRING formatting: ## (drawing mode indicatior) ; ## (starting x Cord) , ## (starting y Cord) ; ## , ##(middle Cords if applicable) ; ## , ## (end Cords) ;
+
+    String actionString = Serial.readStringUntil('\n');
+
+    char action[50];
+    actionString.toCharArray(action, 50);
+
+    //might need to rework this entirely to account for doubles.
+
+    // DEBUG: string
+    Serial.print("STRING: ");
+    Serial.println(action);
+
+    int xStart, yStart, xMid, yMid, xEnd, yEnd;
+
+    // DEBUG: mode detection
+    Serial.print("MODE CHAR: ");
+    Serial.println(action[0]);
+
+    if (action[0] == '0') { //0 = line
+
+      sscanf(action, "%*d;%d,%d;%d,%d", &xStart, &yStart, &xEnd, &yEnd);
+
+      line(xStart,yStart,xEnd,yEnd,3);
+
+    } else if (action[0] == '1') { //1 = arc
+
+      sscanf(action, "%*d;%d,%d;%d,%d;%d,%d", &xStart, &yStart, &xMid, &yMid, &xEnd, &yEnd);
+
+      arc(xStart, yStart, xMid, yMid, xEnd, yEnd);
+    }
     
+    /*
     if (sqrt(x*x + y*y)<=10){
       if ((input == 'w' || input == 'W') && y  < 10){
         y = y+1;
@@ -224,6 +255,7 @@ void loop() {
     } else {
       Serial.print("Out of bounds!");
     }
+    
 
     //debug text 
     Serial.print("(");
@@ -233,7 +265,8 @@ void loop() {
     Serial.print(")\n");
 
     move(x,y);
-    
+    */
+
     // Serial.print(atan(x/y));
     /*
     Serial.print("Pan: ");
