@@ -153,10 +153,16 @@ void arc(double xStart, double yStart, double xMid, double yMid, double xEnd, do
 
     if (ccw){
         total = a3 - a1;
-        if (total < 0) total += 2*PI;
+
+        if (total < 0) {
+            total += 2*PI;
+        }
     } else {
         total = a1 - a3;
-        if (total < 0) total += 2*PI;
+        
+        if (total < 0) {
+          total += 2*PI;
+        }
     }
 
     int steps = 50;
@@ -166,8 +172,12 @@ void arc(double xStart, double yStart, double xMid, double yMid, double xEnd, do
         double t = (double)i / steps;
 
         double angle = ccw
-            ? a1 + total * t
-            : a1 - total * t;
+        
+        if (ccw) {
+          angle = a1 + total * t;
+        } else {
+          angle = a1 - total * t;
+        }
 
         double x = centerX + radius * cos(angle);
         double y = centerY + radius * sin(angle);
