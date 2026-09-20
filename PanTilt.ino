@@ -10,12 +10,17 @@ Servo tiltServo;
 // Pin assignments
 const int panPin = 9;
 const int tiltPin = 10;
+const int pumpControl = 11;
+const int heightSensor = A0;
 
 // restraints for angle changes
 const int panMin = 0;
 const int panMax = 180;
 const int tiltMin = 30;
 const int tiltMax = 150;
+
+int height = 0;
+float heightVoltage = 0.0;
 
 // Starting positions
 double x = 0;
@@ -189,6 +194,26 @@ void arc(double xStart, double yStart, double xMid, double yMid, double xEnd, do
     move(xEnd, yEnd);
 }
 
+void readHeight() {
+  heightRaw = analogRead(heightSensor);
+
+  heightVoltage = heightRaw * (5.0 / 1023.0);
+
+  Serial.print("Height: ");
+  Serial.println(heightRaw);
+  Serial.print("Voltage: ");
+  Serial.println(heightVoltage);
+}
+
+void setPump(bool isOn) {
+  if (isOn) {
+    digitalWrite(pumpControl, HIGH);
+  } else {
+    digitalWrite(pumpControl, LOW);
+  }
+}
+
+
 void setup() {
   panServo.attach(panPin);
   tiltServo.attach(tiltPin);
@@ -197,12 +222,21 @@ void setup() {
   panServo.write(panAngle);
   tiltServo.write(tiltAngle);
 
+  pinMode(pumpControl, OUTPUT);
+  digitalWrite(pumpControl, LOW);
+
+  pinMode(heightSensor, INPUT);
+
   Serial.begin(9600); 
 
   delay(1000);
 }
 
 void loop() {
+
+  readHeight();
+
+  //need to scale the grid from the center based on how far high the sensor reads. 
 
   if (Serial.available() > 0) {
 
